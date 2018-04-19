@@ -191,9 +191,19 @@ int send_response(int fd, char *header, char *content_type, char *body)
   char response[max_response_size];
   int response_length;
 
+  int content_length;
+  time_t now;
+  struct tm ts;
+  char date[80];
+  time(&now);
+  ts = *localtime(&now);
+  strftime(date, sizeof(date), "%a %Y-%m-%d %H:%M:%S %Z", &ts);
+
   // !!!!  IMPLEMENT ME
-  sprintf(response, "%s\nDate: Wed Dec 20 13:05:11 PST 2017\nConnection: close\nContent-Length: %i\nContent-Type: %s\n\n%s", header, strlen(body), content_type, body);
-  printf("Test: %s", response);
+  content_length = strlen(body);
+  response_length = sprintf(response, "%s\nDate: %s\nConnection: close\nContent-Length: %d\nContent-Type: %s\n\n%s", header, date, content_length, content_type, body);
+
+  printf("%s\n", response);
   // Send it all!
   int rv = send(fd, response, response_length, 0);
 
@@ -226,9 +236,10 @@ void get_root(int fd)
   //send_response(...
   char response_body[1024];
 
-  sprintf(response_body, "<p>Hello World!</p>");
-
+  sprintf(response_body, "<p>This HTML element is being served to you courtesy of a C server!</p>");
+  printf("About to send a response for /root path: %s\n", response_body);
   send_response(fd, "HTTP/1.1 200 OK", "text/html", response_body);
+  printf("We sent the HTML for the root path\n");
 }
 
 /**
@@ -237,6 +248,14 @@ void get_root(int fd)
 void get_d20(int fd)
 {
   // !!!! IMPLEMENT ME
+  printf("You called the D20 endpoint!");
+  char response_body[2048];
+  time_t t;
+  int random;
+  srand((unsigned) time(&t));
+  random = rand() & 20;
+  sprintf(response_body, "%i", random);
+  send_response(fd, "HTTP/1.1 200 OK", "text/plain", response_body);
 }
 
 /**
@@ -294,24 +313,26 @@ void handle_http_request(int fd)
   // !!!! IMPLEMENT ME
   // Get the request type and path from the first line
   // Hint: sscanf()!
-  printf(request);
+  printf("The request is: %s",request);
+  printf("\n* * *\nAbout to scan request. . .\n");
   sscanf(request, "%s %s %s", request_type, request_path, request_protocol);
   //printf(request_type);
   //printf(request_path);
   //printf(request_protocol);
-  //printf("Finished printing info about request");
+  printf("Finished scanning request for info");
   // !!!! IMPLEMENT ME (stretch goal)
   // find_end_of_header()
 
   // !!!! IMPLEMENT ME
   // call the appropriate handler functions, above, with the incoming data
   if (!strcmp(request_path, "/")) {
+    printf("We're going to call the handler for root path!\n");
     get_root(fd);
     printf("We called the handler for root path!");
   }
-  else if (!strcmp(request_path, "/d20")) {
+  else if (strcmp(request_path, "/d20") == 0) {
+    printf("We're going to call the handler for the D20 path!");
     get_d20(fd);
-    printf("We called the handler for the D20 path!");
   }
   else if (!strcmp(request_path, "/date")) {
     get_date(fd);
