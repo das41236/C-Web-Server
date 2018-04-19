@@ -237,9 +237,7 @@ void get_root(int fd)
   char response_body[1024];
 
   sprintf(response_body, "<p>This HTML element is being served to you courtesy of a C server!</p>");
-  printf("About to send a response for /root path: %s\n", response_body);
   send_response(fd, "HTTP/1.1 200 OK", "text/html", response_body);
-  printf("We sent the HTML for the root path\n");
 }
 
 /**
@@ -248,7 +246,6 @@ void get_root(int fd)
 void get_d20(int fd)
 {
   // !!!! IMPLEMENT ME
-  printf("You called the D20 endpoint!");
   char response_body[2048];
   time_t t;
   int random;
@@ -263,7 +260,15 @@ void get_d20(int fd)
  */
 void get_date(int fd)
 {
-  // !!!! IMPLEMENT ME
+  char response_body[2048];
+  time_t t;
+  struct tm ts;
+  char date[80];
+  time(&t);
+  ts = *localtime(&t);
+  strftime(date, sizeof(date), "%a %Y-%m-%d %H:%M:%S %Z", &ts);
+  sprintf(response_body, "<p>%s</p>", date);
+  send_response(fd, "HTTP/1.1 200 OK", "text/html", response_body);
 }
 
 /**
@@ -307,30 +312,18 @@ void handle_http_request(int fd)
     return;
   }
 
-   // NUL terminate request string
   request[bytes_recvd] = '\0';
 
-  // !!!! IMPLEMENT ME
-  // Get the request type and path from the first line
-  // Hint: sscanf()!
-  printf("The request is: %s",request);
-  printf("\n* * *\nAbout to scan request. . .\n");
   sscanf(request, "%s %s %s", request_type, request_path, request_protocol);
-  //printf(request_type);
-  //printf(request_path);
-  //printf(request_protocol);
-  printf("Finished scanning request for info");
   // !!!! IMPLEMENT ME (stretch goal)
   // find_end_of_header()
 
-  // !!!! IMPLEMENT ME
-  // call the appropriate handler functions, above, with the incoming data
   if (!strcmp(request_path, "/")) {
     printf("We're going to call the handler for root path!\n");
     get_root(fd);
     printf("We called the handler for root path!");
   }
-  else if (strcmp(request_path, "/d20") == 0) {
+  else if (!strcmp(request_path, "/d20")) {
     printf("We're going to call the handler for the D20 path!");
     get_d20(fd);
   }
